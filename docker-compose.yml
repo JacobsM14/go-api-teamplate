@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:latest 
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+# Uncomment if you need volumes for data persistence
+volumes:
+  db-data:

@@ -1,33 +1,36 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
+
+	"go-api-template/api"
+	db "go-api-template/database"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Get port from environment or use default
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
 	}
 
-	log.Printf("Server starting on port %s...", port)
+	listenAddress := flag.String("port", ":3000", "Port to run the server on")
+	flag.Parse()
 
-	// TODO: Initialize database
-	// TODO: Initialize router
-	// TODO: Setup routes
-	// TODO: Start server
+	store, err := db.NewPostgresStorage(os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"))
+	if err != nil {
+		log.Fatalf("Error connecting to database: %v", err)
+	}
+	defer store.Close()
 
-	log.Println("Server is ready!")
-	log.Println("Press Ctrl+C to stop")
+	// Initialize the database
+	if err := store.Init(); err != nil {
+		log.Fatalf("Error initializing database: %v", err)
+	}
 
-	// Wait for interrupt signal
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	log.Println("Shutting down server...")
+	server := api.NewServer(*listenAddress, store)
+	log.Fatal(server.Start())
 }
